@@ -1,4 +1,5 @@
 
+from __future__ import annotations
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
@@ -6,6 +7,7 @@ from math import ceil
 # from random import Random
 
 from draw import plot
+import vns
 
 
 @dataclass
@@ -101,6 +103,22 @@ class BPSolution:
     #         print("".join(line))
 
 
+@dataclass
+class BPOptimizer(vns.NeighbourhoodExplorer):
+    solution: BPSolution
+    instance: BPInstance
+
+    def shake(self, k: int) -> BPOptimizer:
+        pass
+
+    def improve(self) -> BPOptimizer:
+        pass
+
+    @property
+    def fitness(self) -> float:
+        return self.solution.fitness
+
+
 class BPAlgorithm(ABC):
     """Interface for every Bin Packing Approximation Algorithms."""
     instance: BPInstance
@@ -120,7 +138,9 @@ class BPAlgorithm(ABC):
 
 
 class NextFitAlgorithm(BPAlgorithm):
-    """When the new item does not fit into the current bin, it closes it and opens a new bin."""
+    """When the new item does not fit into the current bin,
+    it closes it and opens a new bin.
+    """
 
     def solve(self) -> BPSolution:
         for item in self.instance:
