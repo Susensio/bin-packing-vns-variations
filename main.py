@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 from math import ceil
 # from random import Random
+import random
 
 from draw import plot
 import vns
@@ -77,11 +78,32 @@ class BPSolution:
                     for bin in self.bins)
                 / len(self.bins))
 
-    def shake(self):
-        pass
+    def possible_moves(self) -> list[Move]:
+        return self.possible_transfers() + self.possible_swaps()
+
+    def possible_tranfers(self) -> list[Move]:
+        moves = []
+        for bin_from_index, bin_from in enumerate(self.bins):
+            for item_index, item in enumerate(bin_from):
+                for bin_to_index, bin_to in enumerate(self.bins):
+                    if bin_to.fits(item):
+                        move = Transfer(bin_from_index, item_index, bin_to_index)
+                        moves.append(move)
+        return moves
 
     def print_stats(self):
         print(f"Number of bins = {len(self.bins)} \tFitness = {self.fitness:.3f}")
+
+
+class Move(ABC):
+    pass
+
+
+@dataclass
+class Transfer(Move):
+    bin_from_index: int
+    item_index: int
+    bin_to_index: int
 
     # def pretty_print(self):
     #     for bin in self.bins:
@@ -106,10 +128,12 @@ class BPSolution:
 @dataclass
 class BPOptimizer(vns.NeighbourhoodExplorer):
     solution: BPSolution
-    instance: BPInstance
 
     def shake(self, k: int) -> BPOptimizer:
-        pass
+        moves = self.solution.possible_moves()
+        # Generate all moves
+        move = random.choice(moves)
+        return self.__class__(self.solution.do_move(move))
 
     def improve(self) -> BPOptimizer:
         pass
@@ -175,42 +199,6 @@ class FirstFitDecreasingAlgorithm(FirstFitAlgorithm):
     def __init__(self, instance: BPInstance) -> None:
         super().__init__(instance, decreasing=True)
 
-
-# def first_fit_decreasing(instance: BPInstance):
-#     solution = first_fit(instance.sort_decreasing())
-#     print(f"First fit decreasing: {len(solution.bins)=}")
-#     return solution
-
-
-# def next_fit(instance: BPInstance):
-#     solution = BPSolution(instance.bin_size)
-
-#     for item in instance:
-#         last_bin = solution[-1]
-#         if last_bin.fits(item):
-#             last_bin.add(item)
-#         else:
-#             last_bin.closed = True
-#             solution.pack_in_new_bin(item)
-#     # solution.pretty_print()
-#     print(f"Next fit: {len(solution.bins)=}")
-#     return solution
-
-
-# def first_fit(instance: BPInstance):
-#     solution = BPSolution(instance.bin_size)
-
-#     for item in instance:
-#         for bin in solution:
-#             if bin.fits(item):
-#                 bin.add(item)
-#                 break
-#         else:
-#             solution.pack_in_new_bin(item)
-
-#     # solution.pretty_print()
-#     print(f"First fit: {len(solution.bins)=}")
-#     return solution
 
 # test_instance = BPInstance(10, [1, 5, 2, 8, 6, 2, 3, 4, 5, 8, 1, 1, 2, 3])
 
