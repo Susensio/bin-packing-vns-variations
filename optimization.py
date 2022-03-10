@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from copy import deepcopy
 import random
 from draw import plot
+from loguru import logger
 
 import vns
 import bpp
@@ -74,7 +75,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
         """
         return sum(bin.content**2 for bin in self.solution)
 
-    def delta_fitness_from_move(self, move) -> float:
+    def delta_fitness_from_move(self, move: Move) -> float:
         """How much would fitness change if move were applied.
         This partial calculation improves substantially computation time.
         Source:
@@ -96,8 +97,10 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             return (b1 - i1 + i2)**2 + (b2 + i1 - i2)**2 - b1**2 - b2**2
 
     def shake(self, k_neighbourhood: int) -> BPSolutionExplorer:
-        # TODO: implement improved shaking from paper
+        """This could be improved with better termination conditions from paper Fleszar2002."""
+        logger.debug(f"SHAKING... {k_neighbourhood=}")
         new_solution = self.copy()
+
         # Save applied moves to avoid looping back to the same solution
         moves_applied_reversed = set()
 
@@ -105,8 +108,8 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             # Only chose between moves that won't undo previous moves
             moves = [m for m in new_solution.possible_moves()
                      if m not in moves_applied_reversed]
+            logger.trace(f"{kth=}\t{len(moves)=}")
 
-            # print(len(f"Shake: {moves}"))
             move = random.choice(moves)
 
             new_solution.do_move(move)
@@ -114,63 +117,85 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
         return new_solution
 
-    def improve(self) -> BPSolutionExplorer:
+    def improve(self, strategy: vns.LocalSearchStrategy) -> BPSolutionExplorer:
         """Stop iterating when improvement is no longer possible."""
+        logger.debug(f"IMPROVING...  {strategy.name=}")
         new_solution = self.copy()
 
         while True:
-            # TODO: local search: first improvement vs best improvement
             moves = new_solution.possible_moves(skip_full_bins=True)
-            # print(len(f"Improve: {moves}"))
-            if len(moves) == 0:
+            # logger.trace(f"{len(moves)=}")
+
+            if strategy == vns.LocalSearchStrategy.BEST:
+                best_move = max(moves, key=new_solution.delta_fitness_from_move,
+                                default=None)
+
+            elif strategy == vns.LocalSearchStrategy.FIRST:
+                best_move = next((m for m in moves
+                                  if new_solution.delta_fitness_from_move(m) > 0),
+                                 None)  # Default
+
+            if (best_move is None) or (new_solution.delta_fitness_from_move(best_move) <= 0):
+                logger.trace("No improvement found.")
                 break
 
-            best_move = max(moves, key=new_solution.delta_fitness_from_move)
-
-            if new_solution.delta_fitness_from_move(best_move) <= 0:
-                break
-
-            # Improvement found
+            logger.trace("Improvement found!")
             new_solution.do_move(best_move)
+            logger.trace(f"{new_solution.stats}")
+            plot(new_solution.solution)
 
         return new_solution
 
     def possible_moves(self, skip_full_bins: bool = False) -> list[Move]:
-        return self.possible_transfers(skip_full_bins) + self.possible_swaps(skip_full_bins)
+        """When in an improvement phase, full bins are skiped as they do not increase fitness."""
+        yield from self.possible_transfers(skip_full_bins)
+        yield from self.possible_swaps(skip_full_bins)
 
     def possible_transfers(self, skip_full_bins: bool) -> list[Move]:
-        moves = []
+        """Enumerates exhaustively every possible transfer, without repetition."""
         for bin_from_index, bin_from in enumerate(self.solution):
-            if not (skip_full_bins and bin_from.is_full):
-                for item in bin_from:
-                    for bin_to_index, bin_to in enumerate(self.solution):
-                        if bin_from_index != bin_to_index:  # Do not transfer to same bin
-                            if bin_to.fits(item):
-                                move = Move.from_transfer(bin_from_index, item, bin_to_index)
-                                moves.append(move)
-        return moves
+
+            if skip_full_bins and bin_from.is_full:   # Skip full bins when needed
+                continue
+
+            for item in bin_from:
+                for bin_to_index, bin_to in enumerate(self.solution):
+
+                    if bin_from_index == bin_to_index:  # Do not transfer to same bin
+                        continue
+
+                    if bin_to.fits(item):
+                        yield Move.from_transfer(bin_from_index, item, bin_to_index)
 
     def possible_swaps(self, skip_full_bins: bool) -> list[Move]:
-        # TODO: only check open bins??? or not??
-        moves = []
+        """Enumerates exhaustively every possible swap, without repetition."""
         for bin_first_index, bin_first in enumerate(self.solution):
-            if not (skip_full_bins and bin_first.is_full):
-                for item_first in bin_first:
-                    for bin_second_index, bin_second in enumerate(self.solution):
-                        # Do not swap backwards (avoid duplicates)
-                        if bin_first_index < bin_second_index:
-                            if not (skip_full_bins and bin_second.is_full):
-                                for item_second in bin_second:
-                                    # Do not swap equal items
-                                    if item_first != item_second:
-                                        if (
-                                            bin_second.fits(item_first - item_second)
-                                            and bin_first.fits(item_second - item_first)
-                                        ):
-                                            move = Move.from_swap(bin_first_index, item_first,
-                                                                  bin_second_index, item_second)
-                                            moves.append(move)
-        return moves
+
+            if (skip_full_bins and bin_first.is_full):   # Skip full bins when needed
+                continue
+
+            for item_first in bin_first:
+                for bin_second_index, bin_second in enumerate(self.solution):
+
+                    if skip_full_bins and bin_second.is_full:   # Skip full bins when needed
+                        continue
+
+                    # Do not swap backwards (avoid duplicated moves)
+                    if bin_first_index >= bin_second_index:
+                        continue
+
+                    for item_second in bin_second:
+
+                        if item_first == item_second:   # Do not swap equal items
+                            continue
+
+                        if (    # Swap is possible: both items would fit without the other
+                            bin_first.fits(item_second - item_first) and
+                            bin_second.fits(item_first - item_second)
+                        ):
+
+                            yield Move.from_swap(bin_first_index, item_first,
+                                                 bin_second_index, item_second)
 
     def do_move(self, move) -> BPSolutionExplorer:
         """Perform move on solution INPLACE, returns self for convinience."""
@@ -184,8 +209,12 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
     def copy(self):
         return deepcopy(self)
 
+    @property
+    def stats(self):
+        return f"Number of bins = {len(self.solution)} \tFitness = {self.fitness}"
+
     def print_stats(self):
-        print(f"Number of bins = {len(self.solution)} \tFitness = {self.fitness:.3f}")
+        print(self.stats)
 
     def plot(self):
         return plot(self.solution)

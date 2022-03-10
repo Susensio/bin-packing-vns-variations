@@ -1,10 +1,14 @@
-from __future__ import annotations
 import random
 from draw import plot
+
 import aproximation
 import bpp
 import optimization
 import vns
+
+import logs
+logs.config('INFO')
+
 
 # test_instance = bpp.BPInstance(10, [1, 5, 2, 8, 6, 2, 3, 4, 5, 8, 1, 1, 2, 3])
 
@@ -28,12 +32,28 @@ if __name__ == "__main__":
     #         sol = alg.solve()
     #         sol.print_stats()
     #         plot(sol)
+    k_max = 15
+    t_max = 15
 
     alg = aproximation.NextFitAlgorithm(test_instance)
     sol = alg.solve()
+    plot(sol)
     ex = optimization.BPSolutionExplorer(sol)
-    mh = vns.BasicVNS(ex, k_max=10, t_max=15)
-    mh.solve()
+
+    mh = vns.BasicVNS(ex, k_max, t_max, strategy=vns.LocalSearchStrategy.BEST)
+    sol2 = mh.solve()
+    # input("Press enter to continue...")
+    plot(sol2)
+
+    mh = vns.BasicVNS(ex, k_max, t_max, strategy=vns.LocalSearchStrategy.FIRST)
+    sol2 = mh.solve()
+    # input("Press enter to continue...")
+    plot(sol2)
+
+    mh = vns.ReducedVNS(ex, k_max, t_max)
+    sol2 = mh.solve()
+    # input("Press enter to continue...")
+    plot(sol2)
 
     # plot(ex.solution)
     # ex.print_stats()

@@ -56,7 +56,12 @@ class Bin:
 
     @lru_cache
     def fits(self, item) -> bool:
-        return item <= (self.size - self.content)
+        return item <= self.gap
+
+    @property
+    @lru_cache
+    def gap(self) -> float:
+        return (self.size - self.content)
 
     @property
     @lru_cache
@@ -64,8 +69,9 @@ class Bin:
         return sum(self.items)
 
     def _clear_cache(self):
-        self.__class__.content.fget.cache_clear()   # .fget needed because its a property
         self.__class__.fits.cache_clear()
+        self.__class__.gap.fget.cache_clear()   # .fget needed because its a property
+        self.__class__.content.fget.cache_clear()
 
     @property
     def is_empty(self) -> bool:

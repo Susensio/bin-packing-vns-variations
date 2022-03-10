@@ -66,6 +66,7 @@ def plot(solution):
 
     img.save('result.png')
     # img.show()
+
     return img
     # sleep(0.1)
 
