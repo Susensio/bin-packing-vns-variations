@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from math import ceil
 from copy import deepcopy
+from functools import lru_cache
 
 
 @dataclass
@@ -26,8 +27,11 @@ class BPInstance:
         return ceil(sum(self.items) / self.bin_size)
 
 
-@dataclass
+@dataclass(eq=False)
 class Bin:
+    """Some properties and methods are cached to reduce computation time.
+    Cache must be cleared when the Bin changes (item added or removed).
+    """
     size: float
     items: list[float] = field(default_factory=list)
     closed: bool = False
@@ -39,28 +43,37 @@ class Bin:
     def append(self, item) -> None:
         if item <= 0:
             raise ValueError("Item weight must be bigger than zero.")
+        self._clear_cache()
         self.items.append(item)
 
     def pop(self, index) -> float:
+        self._clear_cache()
         return self.items.pop(index)
 
     def remove(self, item) -> None:
+        self._clear_cache()
         self.items.remove(item)
 
+    @lru_cache
     def fits(self, item) -> bool:
         return item <= (self.size - self.content)
 
     @property
+    @lru_cache
+    def content(self) -> float:
+        return sum(self.items)
+
+    def _clear_cache(self):
+        self.__class__.content.fget.cache_clear()   # .fget needed because its a property
+        self.__class__.fits.cache_clear()
+
+    @property
     def is_empty(self) -> bool:
-        return self.content == 0
+        return len(self.items) == 0
 
     @property
     def is_full(self) -> bool:
         return self.content == self.size
-
-    @property
-    def content(self) -> float:
-        return sum(self.items)
 
 
 @dataclass

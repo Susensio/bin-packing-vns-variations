@@ -20,6 +20,7 @@ class Algorithm(ABC):
         self.debug = debug
 
     def maybe_plot(self):
+        # TODO: aver que hago con esto
         if self.debug:
             plot(self.solution)
             input("Press Enter to continue...")

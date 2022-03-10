@@ -43,15 +43,19 @@ class VNS(ABC):
 class BasicVNS(VNS):
     def solve(self) -> None:
         start_time = process_time()
-        while (process_time() - start_time) < self.t_max:
-            self.k = 1
-            while self.k <= self.k_max:
-                print(process_time() - start_time)
-                print("SHAKE")
-                neighbour = self.explorer.shake(self.k)
-                print("IMPROVE")
-                local_optimum = neighbour.improve()
-                self.neighbourhood_change_sequential(local_optimum)
+        self.k = 1
+        while self.k <= self.k_max:
+            print(self.k)
+            print(process_time() - start_time)
+            print("SHAKE")
+            neighbour = self.explorer.shake(self.k)
+            print("IMPROVE")
+            local_optimum = neighbour.improve()
+            self.neighbourhood_change_sequential(local_optimum)
+
+            elapsed = (process_time() - start_time)
+            if elapsed > self.t_max:
+                break
 
         self.explorer.print_stats()
         return self.explorer

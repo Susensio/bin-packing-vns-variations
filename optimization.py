@@ -8,7 +8,7 @@ import vns
 import bpp
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Transfer:
     bin_from_index: int
     item: int
@@ -24,7 +24,7 @@ class Transfer:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Move:
     """A Move is a sequence of transfers."""
     transfers: frozenset[Transfer]
@@ -106,6 +106,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             moves = [m for m in new_solution.possible_moves()
                      if m not in moves_applied_reversed]
 
+            # print(len(f"Shake: {moves}"))
             move = random.choice(moves)
 
             new_solution.do_move(move)
@@ -120,12 +121,11 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
         while True:
             # TODO: local search: first improvement vs best improvement
             moves = new_solution.possible_moves(skip_full_bins=True)
-
+            # print(len(f"Improve: {moves}"))
             if len(moves) == 0:
                 break
 
-            moves.sort(key=new_solution.delta_fitness_from_move, reverse=True)
-            best_move = moves[0]
+            best_move = max(moves, key=new_solution.delta_fitness_from_move)
 
             if new_solution.delta_fitness_from_move(best_move) <= 0:
                 break

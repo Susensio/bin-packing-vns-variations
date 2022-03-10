@@ -7,10 +7,12 @@ import optimization
 import vns
 
 # test_instance = bpp.BPInstance(10, [1, 5, 2, 8, 6, 2, 3, 4, 5, 8, 1, 1, 2, 3])
+
 random.seed(0)
 bin_size = 100
 test_instance = bpp.BPInstance(
-    bin_size, [int(bin_size*random.random()*0.2)+1 for _ in range(int(bin_size*20))])
+    bin_size, [int(bin_size*random.random()*0.5)+1
+               for _ in range(int(bin_size*3))])
 
 if __name__ == "__main__":
 
@@ -30,7 +32,7 @@ if __name__ == "__main__":
     alg = aproximation.NextFitAlgorithm(test_instance)
     sol = alg.solve()
     ex = optimization.BPSolutionExplorer(sol)
-    mh = vns.BasicVNS(ex, k_max=10, t_max=5)
+    mh = vns.BasicVNS(ex, k_max=10, t_max=15)
     mh.solve()
 
     # plot(ex.solution)
