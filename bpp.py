@@ -5,12 +5,19 @@ from dataclasses import dataclass, field
 from math import ceil
 from copy import deepcopy
 from functools import lru_cache
+import files
 
 
 @dataclass
 class BPInstance:
+    """All the inputs needed to describe a Bin Packing Problem"""
     bin_size: float
     items: list[float]
+
+    @classmethod
+    def from_reader(cls, reader: files.InstanceReader):
+        data = reader.read()
+        return cls(data.bin_size, data.items)
 
     def __iter__(self):
         """Allows easier iteration."""

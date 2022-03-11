@@ -1,9 +1,10 @@
 from __future__ import annotations
+from collections.abc import Iterator
 from dataclasses import dataclass
 from copy import deepcopy
 import random
+
 from draw import plot
-from loguru import logger
 
 import vns
 import bpp
@@ -98,7 +99,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
     def shake(self, k_neighbourhood: int) -> BPSolutionExplorer:
         """This could be improved with better termination conditions from paper Fleszar2002."""
-        logger.debug(f"SHAKING... {k_neighbourhood=}")
+        self.logger.debug(f"SHAKING... {k_neighbourhood=}")
         new_solution = self.copy()
 
         # Save applied moves to avoid looping back to the same solution
@@ -108,8 +109,10 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             # Only chose between moves that won't undo previous moves
             moves = [m for m in new_solution.possible_moves()
                      if m not in moves_applied_reversed]
-            logger.trace(f"{kth=}\t{len(moves)=}")
+            self.logger.trace(f"{kth=}\t{len(moves)=}")
 
+            if len(moves) == 0:
+                break
             move = random.choice(moves)
 
             new_solution.do_move(move)
@@ -119,12 +122,12 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
     def improve(self, strategy: vns.LocalSearchStrategy) -> BPSolutionExplorer:
         """Stop iterating when improvement is no longer possible."""
-        logger.debug(f"IMPROVING...  {strategy.name=}")
+        self.logger.debug(f"IMPROVING...  {strategy.name=}")
         new_solution = self.copy()
 
         while True:
             moves = new_solution.possible_moves(skip_full_bins=True)
-            # logger.trace(f"{len(moves)=}")
+            # self.logger.trace(f"{len(moves)=}")
 
             if strategy == vns.LocalSearchStrategy.BEST:
                 best_move = max(moves, key=new_solution.delta_fitness_from_move,
@@ -136,22 +139,22 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
                                  None)  # Default
 
             if (best_move is None) or (new_solution.delta_fitness_from_move(best_move) <= 0):
-                logger.trace("No improvement found.")
+                self.logger.trace("No improvement found.")
                 break
 
-            logger.trace("Improvement found!")
+            self.logger.trace("Improvement found!")
             new_solution.do_move(best_move)
-            logger.trace(f"{new_solution.stats}")
+            self.logger.trace(f"{new_solution.stats}")
             plot(new_solution.solution)
 
         return new_solution
 
-    def possible_moves(self, skip_full_bins: bool = False) -> list[Move]:
+    def possible_moves(self, skip_full_bins: bool = False) -> Iterator[Move]:
         """When in an improvement phase, full bins are skiped as they do not increase fitness."""
         yield from self.possible_transfers(skip_full_bins)
         yield from self.possible_swaps(skip_full_bins)
 
-    def possible_transfers(self, skip_full_bins: bool) -> list[Move]:
+    def possible_transfers(self, skip_full_bins: bool) -> Iterator[Move]:
         """Enumerates exhaustively every possible transfer, without repetition."""
         for bin_from_index, bin_from in enumerate(self.solution):
 
@@ -167,7 +170,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
                     if bin_to.fits(item):
                         yield Move.from_transfer(bin_from_index, item, bin_to_index)
 
-    def possible_swaps(self, skip_full_bins: bool) -> list[Move]:
+    def possible_swaps(self, skip_full_bins: bool) -> Iterator[Move]:
         """Enumerates exhaustively every possible swap, without repetition."""
         for bin_first_index, bin_first in enumerate(self.solution):
 

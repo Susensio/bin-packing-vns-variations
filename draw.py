@@ -1,6 +1,6 @@
 import colorsys
 from functools import lru_cache
-# from time import sleep
+from time import sleep
 from PIL import Image, ImageDraw
 from random import Random
 
@@ -65,10 +65,10 @@ def plot(solution):
             y0 = y1
 
     img.save('result.png')
+    sleep(0.1)
     # img.show()
 
     return img
-    # sleep(0.1)
 
 
 # class Plotter:
