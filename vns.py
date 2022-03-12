@@ -51,22 +51,31 @@ class VNS(ABC):
         self.logger.info(f"{self.__class__.__name__}({getattr(self,'strategy','')})\t"
                          f"{self.explorer.stats}")
 
-        while True:
+        stop = False
+        while not stop:
             self.k = 1
             while self.k <= self.k_max:
                 self.logger.debug(f"Neighbourhood = {self.k}")
 
                 self.do_steps()     # The algorithm core
 
+                if self.explorer.is_optimum:
+                    stop = True
+                    self.logger.info("Global optimum found.")
+                    break
+
                 if self.timed_out:
+                    stop = True
                     self.logger.info(f"Timeout. {self.elapsed_time=:.2f}s")
-                    self.logger.success(f"{self.__class__.__name__}"
-                                        f"({getattr(self,'strategy','')})\t"
-                                        f"{self.explorer.stats}")
-                    return self.explorer.solution
+                    break
 
             self.logger.info("Restart neighbourhood search")
             self.logger.debug(f"{self.elapsed_time}")
+
+        self.logger.success(f"{self.__class__.__name__}"
+                            f"({getattr(self,'strategy','')})\t"
+                            f"{self.explorer.stats}")
+        return self.explorer.solution
 
     @abstractmethod
     def do_steps(self) -> None:
@@ -88,7 +97,7 @@ class VNS(ABC):
         if new_explorer.fitness > self.explorer.fitness:
             self.explorer = new_explorer
             self.logger.debug(self.explorer.stats)
-            plot(self.explorer.solution)
+            # plot(self.explorer.solution)
 
             self.k = 1
         else:
