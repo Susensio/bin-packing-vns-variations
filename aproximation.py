@@ -35,7 +35,7 @@ class AlgorithmDecreasing(Algorithm):
         super().__init__(instance.sort_decreasing())
 
 
-class WorstAlgorithm(Algorithm):
+class NullAlgorithm(Algorithm):
     """Usefull for testing. Puts each item in a new bin."""
 
     def solve(self) -> bpp.BPSolution:
@@ -77,12 +77,7 @@ class FirstFitAlgorithm(Algorithm):
 
 
 class FirstFitDecreasingAlgorithm(AlgorithmDecreasing, FirstFitAlgorithm):
-    """Same as first fit, but initial list of items is sorted in decreasing order."""
+    """Same as first fit, but initial list of items is sorted in decreasing order.
 
-
-class MinimumBinSlack(AlgorithmDecreasing):
-
-    def solve(self) -> bpp.BPSolution:
-        pass
-        # items_remaining = self.instance.copy()
-        # TODO: implement
+    This class in defined by inheritance.
+    """

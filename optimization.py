@@ -1,5 +1,5 @@
 from __future__ import annotations
-from collections.abc import Iterator
+from typing import Iterator
 from dataclasses import dataclass
 from copy import deepcopy
 import random
@@ -26,13 +26,13 @@ class Transfer:
         )
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, eq=True)
 class Move:
     """A Move is a sequence of transfers."""
     transfers: frozenset[Transfer]
 
     def __post_init__(self):
-        """Forze self.transfers to a frozenset, allowing instantiating class with any iterable."""
+        """Cast self.transfers to a frozenset, allowing instantiating class with any iterable."""
         # https://docs.python.org/3/library/dataclasses.html#frozen-instances
         object.__setattr__(self, 'transfers', frozenset(self.transfers))
 
@@ -67,6 +67,7 @@ class Move:
 @dataclass
 class BPSolutionExplorer(vns.NeighbourhoodExplorer):
     """Wraps BPSolution with exploring capabilities needed for neighbourhood searching."""
+    instance: bpp.BPInstance
     solution: bpp.BPSolution
 
     @property
@@ -75,6 +76,10 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
         fitness = sum of squared occupancy.
         """
         return sum(bin.content**2 for bin in self.solution)
+
+    @property
+    def is_optimum(self) -> bool:
+        return self.instance.lower_bound == len(self.solution.bins)
 
     def delta_fitness_from_move(self, move: Move) -> float:
         """How much would fitness change if move were applied.
@@ -98,7 +103,9 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             return (b1 - i1 + i2)**2 + (b2 + i1 - i2)**2 - b1**2 - b2**2
 
     def shake(self, k_neighbourhood: int) -> BPSolutionExplorer:
-        """This could be improved with better termination conditions from paper Fleszar2002."""
+        """This could be improved with better termination conditions from paper Fleszar2002.
+        Furthermore, if random choice is to be made, there is no need to generate all moves.
+        """
         self.logger.debug(f"SHAKING... {k_neighbourhood=}")
         new_solution = self.copy()
 
@@ -127,7 +134,6 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
         while True:
             moves = new_solution.possible_moves(skip_full_bins=True)
-            # self.logger.trace(f"{len(moves)=}")
 
             if strategy == vns.LocalSearchStrategy.BEST:
                 best_move = max(moves, key=new_solution.delta_fitness_from_move,
@@ -136,7 +142,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             elif strategy == vns.LocalSearchStrategy.FIRST:
                 best_move = next((m for m in moves
                                   if new_solution.delta_fitness_from_move(m) > 0),
-                                 None)  # Default
+                                 None)  # default
 
             if (best_move is None) or (new_solution.delta_fitness_from_move(best_move) <= 0):
                 self.logger.trace("No improvement found.")
@@ -145,7 +151,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
             self.logger.trace("Improvement found!")
             new_solution.do_move(best_move)
             self.logger.trace(f"{new_solution.stats}")
-            plot(new_solution.solution)
+            # plot(new_solution.solution)
 
         return new_solution
 
@@ -214,7 +220,7 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
     @property
     def stats(self):
-        return f"Number of bins = {len(self.solution)} \tFitness = {self.fitness}"
+        return f"Bins={len(self.solution)}(min={self.instance.lower_bound}) Fitness={self.fitness}"
 
     def print_stats(self):
         print(self.stats)

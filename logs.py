@@ -6,6 +6,7 @@ FORMAT = (
     ' | '
     '<level>{level: <8}</level>'
     ' | '
+    '[<cyan>{process.name}</cyan>]'
     '<cyan>{name}</cyan>:'
     '<cyan>{extra[classname]}</cyan>:'
     '<cyan>{function}</cyan>:'

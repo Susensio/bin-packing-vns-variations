@@ -8,16 +8,23 @@ from functools import lru_cache
 import files
 
 
-@dataclass
+@dataclass(frozen=True, eq=True)
 class BPInstance:
     """All the inputs needed to describe a Bin Packing Problem"""
     bin_size: float
-    items: list[float]
+    items: tuple[float]
+
+    def __post_init__(self):
+        """Cast self.transfers to a frozenset, allowing instantiating class with any iterable."""
+        # https://docs.python.org/3/library/dataclasses.html#frozen-instances
+        object.__setattr__(self, 'items', tuple(self.items))
 
     @classmethod
     def from_reader(cls, reader: files.InstanceReader):
-        data = reader.read()
-        return cls(data.bin_size, data.items)
+        instance = cls(reader.bin_size, reader.items)
+        # Save file path for later introspection
+        object.__setattr__(instance, 'source', reader.path)
+        return instance
 
     def __iter__(self):
         """Allows easier iteration."""
@@ -29,6 +36,8 @@ class BPInstance:
         sorted_instance = self.__class__(self.bin_size, items)
         return sorted_instance
 
+    @property
+    @lru_cache
     def lower_bound(self) -> int:
         """Minimun number of bins required."""
         return ceil(sum(self.items) / self.bin_size)

@@ -1,10 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from time import process_time
-# from loguru import logger
 from enum import Enum, auto
 
+import utils
 import logs
 from draw import plot
 
@@ -27,6 +26,11 @@ class NeighbourhoodExplorer(ABC):
 
     @property
     @abstractmethod
+    def is_optimum(self) -> bool:
+        """If global optimum is reached and detected, inform to stop early."""
+
+    @property
+    @abstractmethod
     def stats(self):
         """Returns a string with usefull information about the current solution."""
 
@@ -35,21 +39,31 @@ class LocalSearchStrategy(Enum):
     FIRST = auto()
     BEST = auto()
 
+    def __repr__(self) -> str:
+        return self.name
+
 
 @logs.append_logger
 @dataclass
 class VNS(ABC):
-    explorer: NeighbourhoodExplorer
+    explorer: NeighbourhoodExplorer = field(repr=False)
     k_max: int
     t_max: float    # seconds
 
-    k: int = field(default=1, init=False)
+    local_strategy: LocalSearchStrategy = None
+
+    # To keep track of current neighbourhood
+    k: int = field(default=1, init=False, repr=False)
+    timer: utils.Timer = field(default_factory=utils.Timer, init=False, repr=False)
 
     def solve(self) -> NeighbourhoodExplorer:
-        self.start_timer()
+        # TODO: improve timeout with context manager maybe?
+        self.timer.start()
 
-        self.logger.info(f"{self.__class__.__name__}({getattr(self,'strategy','')})\t"
-                         f"{self.explorer.stats}")
+        # self.logger.info(f"{self.__class__.__name__}({getattr(self,'strategy','')})\t"
+        #                  f"{self.explorer.stats}")
+        self.logger.info(self)
+        self.logger.info(f"{self.explorer.stats}")
 
         stop = False
         while not stop:
@@ -66,31 +80,31 @@ class VNS(ABC):
 
                 if self.timed_out:
                     stop = True
-                    self.logger.info(f"Timeout. {self.elapsed_time=:.2f}s")
+                    self.logger.info(f"Timeout. {self.timer.elapsed_time=:.2f}s")
                     break
 
-            self.logger.info("Restart neighbourhood search")
-            self.logger.debug(f"{self.elapsed_time}")
+            else:   # If the inner loop wasn't broken
+                self.logger.info("Restart neighbourhood search")
+                self.logger.debug(f"{self.timer.elapsed_time}")
 
         self.logger.success(f"{self.__class__.__name__}"
                             f"({getattr(self,'strategy','')})\t"
                             f"{self.explorer.stats}")
+
+        self.timer.stop()
         return self.explorer.solution
 
     @abstractmethod
     def do_steps(self) -> None:
         """This is where each concrete algorithm gets implemented."""
 
-    def start_timer(self) -> None:
-        self.t_0 = process_time()
-
     @property
     def elapsed_time(self) -> float:
-        return process_time() - self.t_0
+        return self.timer.elapsed_time
 
     @property
     def timed_out(self) -> bool:
-        return self.elapsed_time >= self.t_max
+        return self.timer.elapsed_time >= self.t_max
 
     def neighbourhood_change_sequential(self, new_explorer: NeighbourhoodExplorer) -> None:
         """Reused in many algorithms."""
@@ -104,13 +118,11 @@ class VNS(ABC):
             self.k += 1
 
 
-@dataclass
 class BasicVNS(VNS):
-    strategy: LocalSearchStrategy = LocalSearchStrategy.BEST
 
     def do_steps(self):
         neighbour = self.explorer.shake(self.k)
-        local_optimum = neighbour.improve(self.strategy)
+        local_optimum = neighbour.improve(self.local_strategy)
         self.neighbourhood_change_sequential(local_optimum)
 
 
@@ -122,10 +134,10 @@ class ReducedVNS(VNS):
         self.neighbourhood_change_sequential(neighbour)
 
 
-class VNDescent(VNS):
-    """Same as BasicVNS but improvement phase is discarded."""
+# class GeneralVNS(VNS):
+#     """VND used as an improvement procedure."""
 
-    def do_steps(self):
-        neighbour = self.explorer.shake(self.k)
-        local_optimum = neighbour.improve(self.strategy)
-        self.neighbourhood_change_sequential(local_optimum)
+#     def do_steps(self):
+#         neighbour = self.explorer.shake(self.k)
+#         local_optimum = neighbour.improve(self.strategy)
+#         self.neighbourhood_change_sequential(local_optimum)
