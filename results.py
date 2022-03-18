@@ -31,7 +31,7 @@ class Experiment:
             len(alg.explorer.instance.items),
             alg.explorer.instance.lower_bound,
             alg.__class__.__name__,
-            alg.local_strategy.name,
+            getattr(alg.local_strategy, 'name', None),
             alg.k_max,
             alg.t_max,
             alg.timer.elapsed_time,

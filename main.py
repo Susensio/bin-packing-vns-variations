@@ -19,10 +19,10 @@ random.seed(0)
 # test_instance = bpp.BPInstance(10, [1, 5, 2, 8, 6, 2, 3, 4, 5, 8, 1, 1, 2, 3])
 # test_instance = bpp.BPInstance.from_reader(files.ins)
 
-# bin_size = 500
-# test_instance = bpp.BPInstance(
-#     bin_size, [int(bin_size*random.random()*0.5)+1
-#                for _ in range(int(bin_size*3))])
+bin_size = 200
+test_instance = bpp.BPInstance(
+    bin_size, [int(bin_size*random.random()*0.5)+1
+               for _ in range(int(bin_size*3))])
 
 if __name__ == "__main__":
 
@@ -42,11 +42,11 @@ if __name__ == "__main__":
     K_MAX = (
         # 5,
         10,
-        # 20,
-        # 50,
+        20,
+        50,
     )
 
-    t_max = 1
+    t_max = 60
 
     # instances = list(files.Instances.easy())[:3]
     def process_instance(instance):
@@ -55,8 +55,8 @@ if __name__ == "__main__":
         aprox = aproximation.FirstFitAlgorithm(ins).solve()
         explorer = optimization.BPSolutionExplorer(ins, aprox)
         for algorithm, strategy in (
-            # (vns.ReducedVNS, None),
-            # (vns.BasicVNS, vns.LocalSearchStrategy.BEST),
+            (vns.ReducedVNS, None),
+            (vns.BasicVNS, vns.LocalSearchStrategy.BEST),
             (vns.BasicVNS, vns.LocalSearchStrategy.FIRST),
         ):
             for k_max in K_MAX:
@@ -68,14 +68,14 @@ if __name__ == "__main__":
                 experiment = results.Experiment.from_algorithm(alg)
                 logs.logger.info(experiment)
                 logbook.append(experiment)
-                logs.logger.info(f"{len(results.logbook)=}")
+                # logs.logger.info(f"{len(results.logbook)}")
         return logbook
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         files = files.Instances.falkenauer()
         for experiments in executor.map(process_instance, files):
             results.logbook.extend(experiments)
-            logs.logger.warning(f"{len(results.logbook)}")
+            logs.logger.success(f"Total experiments={len(results.logbook)}")
             results.save_logbook(results.falkenauer_file)
 
     # for instance in files.Instances.hard28():
@@ -123,6 +123,7 @@ if __name__ == "__main__":
     # mh = vns.BasicVNS(ex, k_max, t_max, vns.LocalSearchStrategy.BEST)
     # sol2 = mh.solve()
     # logs.logger.info(f"{mh.elapsed_time=}")
+
     # results.logbook.append(results.Experiment(files.ins, test_instance.lower_bound,
     # k_max, t_max, 0, len(sol.bins))
     # # input("Press enter to continue...")

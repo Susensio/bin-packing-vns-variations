@@ -71,16 +71,17 @@ class VNS(ABC):
             while self.k <= self.k_max:
                 self.logger.debug(f"Neighbourhood = {self.k}")
 
-                self.do_steps()     # The algorithm core
+                with self.timer.timeout(self.t_max):
+                    self.do_steps()     # The algorithm core
 
                 if self.explorer.is_optimum:
                     stop = True
-                    self.logger.info("Global optimum found.")
+                    self.logger.success("Global optimum found.")
                     break
 
                 if self.timed_out:
                     stop = True
-                    self.logger.info(f"Timeout. {self.timer.elapsed_time=:.2f}s")
+                    self.logger.warning(f"Timeout. {self.timer.elapsed_time=:.2f}s")
                     break
 
             else:   # If the inner loop wasn't broken

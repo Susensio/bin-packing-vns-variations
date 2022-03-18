@@ -132,26 +132,31 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
         self.logger.debug(f"IMPROVING...  {strategy.name=}")
         new_solution = self.copy()
 
-        while True:
-            moves = new_solution.possible_moves(skip_full_bins=True)
+        try:    # If timed out, return the best solution so far
+            while True:
+                moves = new_solution.possible_moves(skip_full_bins=True)
 
-            if strategy == vns.LocalSearchStrategy.BEST:
-                best_move = max(moves, key=new_solution.delta_fitness_from_move,
-                                default=None)
+                if strategy == vns.LocalSearchStrategy.BEST:
+                    best_move = max(moves, key=new_solution.delta_fitness_from_move,
+                                    default=None)
 
-            elif strategy == vns.LocalSearchStrategy.FIRST:
-                best_move = next((m for m in moves
-                                  if new_solution.delta_fitness_from_move(m) > 0),
-                                 None)  # default
+                elif strategy == vns.LocalSearchStrategy.FIRST:
+                    best_move = next((m for m in moves
+                                      if new_solution.delta_fitness_from_move(m) > 0),
+                                     None)  # default
+                # 0/0
+                if (best_move is None) or (new_solution.delta_fitness_from_move(best_move) <= 0):
+                    self.logger.trace("No improvement found.")
+                    break
 
-            if (best_move is None) or (new_solution.delta_fitness_from_move(best_move) <= 0):
-                self.logger.trace("No improvement found.")
-                break
+                self.logger.trace("Improvement found!")
+                new_solution.do_move(best_move)
+                self.logger.trace(f"{new_solution.stats}")
+                # plot(new_solution.solution)
 
-            self.logger.trace("Improvement found!")
-            new_solution.do_move(best_move)
-            self.logger.trace(f"{new_solution.stats}")
-            # plot(new_solution.solution)
+        except TimeoutError:
+            self.logger.trace("Timed out while improving. Returning best solution so far.")
+            return new_solution
 
         return new_solution
 
