@@ -21,6 +21,7 @@ class BPInstance:
 
     @classmethod
     def from_reader(cls, reader: files.InstanceReader):
+        """Create a new instance from a file."""
         instance = cls(reader.bin_size, reader.items)
         # Save file path for later introspection
         object.__setattr__(instance, 'source', reader.path)
@@ -57,6 +58,7 @@ class Bin:
         return self.items.__iter__()
 
     def append(self, item) -> None:
+        """Safely append item to bin."""
         if item <= 0:
             raise ValueError("Item weight must be bigger than zero.")
         self._clear_cache()
@@ -72,19 +74,23 @@ class Bin:
 
     @lru_cache
     def fits(self, item) -> bool:
+        """Check if item fits in bin."""
         return item <= self.gap
 
     @property
     @lru_cache
     def gap(self) -> float:
+        """Empty space in bin."""
         return (self.size - self.content)
 
     @property
     @lru_cache
     def content(self) -> float:
+        """Total weight of items in bin."""
         return sum(self.items)
 
     def _clear_cache(self):
+        """Clear all cached properties."""
         self.__class__.fits.cache_clear()
         self.__class__.gap.fget.cache_clear()   # .fget needed because its a property
         self.__class__.content.fget.cache_clear()

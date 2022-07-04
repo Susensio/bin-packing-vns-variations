@@ -29,7 +29,7 @@ item_margin = 0
 bin_height = img_height - 2*(img_padding+bin_margin)
 
 
-def plot(solution):
+def plot(solution, frame=True):
     bin_count = len(solution.bins)
     bin_size = solution.bin_size
     scale = bin_height / bin_size
@@ -46,12 +46,13 @@ def plot(solution):
         x1 = img_padding + (bin_index+1)*(bin_width+bin_margin) - bin_margin
         y1 = img_padding + scale*bin_size
 
-        # Draw bins
-        draw.rectangle((x0-bin_padding,
-                        y0-bin_padding,
-                        x1+bin_padding,
-                        y1+bin_padding
-                        ), outline='black')
+        if frame:
+            # Draw bins
+            draw.rectangle((x0-bin_padding,
+                            y0-bin_padding,
+                            x1+bin_padding,
+                            y1+bin_padding
+                            ), outline='black')
 
         # Draw items
         for item in bin:
@@ -64,19 +65,8 @@ def plot(solution):
                            outline='black')
             y0 = y1
 
-    img.save('result.png')
+    img.transpose(Image.FLIP_TOP_BOTTOM).save('result.png')
     sleep(0.1)
     # img.show()
 
     return img
-
-
-# class Plotter:
-#     SEED = 0
-#     rng: Random
-
-#     def __init__(self) -> None:
-#         self.rng = Random(self.SEED)
-
-#     def reset_seed(self):
-#         self.rng.seed()

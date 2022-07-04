@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 
 import bpp
-from draw import plot
 
 
 class Algorithm(ABC):
@@ -11,19 +10,11 @@ class Algorithm(ABC):
     instance: bpp.BPInstance
     solution: bpp.BPSolution
 
-    def __init__(self, instance: bpp.BPInstance, debug=False) -> None:
+    def __init__(self, instance: bpp.BPInstance) -> None:
         self.instance = instance
 
         # Initialize empty solution
         self.solution = bpp.BPSolution(instance.bin_size)
-
-        self.debug = debug
-
-    def maybe_plot(self):
-        # TODO: aver que hago con esto
-        if self.debug:
-            plot(self.solution)
-            input("Press Enter to continue...")
 
     @abstractmethod
     def solve(self) -> bpp.BPSolution:
@@ -57,7 +48,6 @@ class NextFitAlgorithm(Algorithm):
             else:
                 last_bin.closed = True
                 self.solution.pack_in_new_bin(item)
-            self.maybe_plot()
         return self.solution
 
 
@@ -72,7 +62,6 @@ class FirstFitAlgorithm(Algorithm):
                     break
             else:   # item did not fit in any existing bin
                 self.solution.pack_in_new_bin(item)
-            self.maybe_plot()
         return self.solution
 
 

@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from pathlib import Path
-import pickle
 import pandas as pd
 import vns
 
-pickle_file = Path('output.pickle')
 excel_file = Path('output.xls')
 falkenauer_file = Path('output_falkenauer.xls')
 
@@ -44,7 +42,5 @@ logbook = []
 
 
 def save_logbook(file=excel_file):
-    # with pickle_file.open('wb') as file:
-    #     pickle.dump(logbook, file)
     df = pd.DataFrame.from_dict(logbook)
     df.to_excel(file)

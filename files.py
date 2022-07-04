@@ -2,14 +2,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
-INSTANCES = Path('instances')
-
-
-example = next(next(next(INSTANCES.iterdir()).iterdir()).iterdir())
-
 
 @dataclass
 class InstanceReader:
+    """Read instance from file."""
     path: Path
 
     def __post_init__(self):
@@ -17,15 +13,6 @@ class InstanceReader:
         with self.path.open(mode='r') as file:
             self.number_of_items = self.number(file.readline())
             self.bin_size = self.number(file.readline())
-
-    # def read(self):
-    #     with self.path.open(mode='r') as file:
-    #         n = self.number(file.readline())
-    #         self.bin_size = self.number(file.readline())
-    #         self.items = [self.number(n) for n in file.readlines()]
-    #         assert len(self.items) == n
-
-    #     return self
 
     @property
     def items(self):
@@ -81,6 +68,3 @@ class Instances:
 
     def find_all_files(path):
         yield from path.rglob('*.*')
-
-
-ins = InstanceReader(example)

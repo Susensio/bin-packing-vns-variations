@@ -5,7 +5,6 @@ from enum import Enum, auto
 
 import utils
 import logs
-from draw import plot
 
 
 @logs.append_logger
@@ -36,6 +35,7 @@ class NeighbourhoodExplorer(ABC):
 
 
 class LocalSearchStrategy(Enum):
+    """Enum for selecting the strategy for local search."""
     FIRST = auto()
     BEST = auto()
 
@@ -133,12 +133,3 @@ class ReducedVNS(VNS):
     def do_steps(self):
         neighbour = self.explorer.shake(self.k)
         self.neighbourhood_change_sequential(neighbour)
-
-
-# class GeneralVNS(VNS):
-#     """VND used as an improvement procedure."""
-
-#     def do_steps(self):
-#         neighbour = self.explorer.shake(self.k)
-#         local_optimum = neighbour.improve(self.strategy)
-#         self.neighbourhood_change_sequential(local_optimum)

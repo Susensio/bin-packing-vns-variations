@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from copy import deepcopy
 import random
 
-from draw import plot
-
 import vns
 import bpp
 
@@ -104,7 +102,8 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
 
     def shake(self, k_neighbourhood: int) -> BPSolutionExplorer:
         """This could be improved with better termination conditions from paper Fleszar2002.
-        Furthermore, if random choice is to be made, there is no need to generate all moves.
+        Furthermore, if random choice were made in possible_moves(), there would be no need
+        to generate all moves.
         """
         self.logger.debug(f"SHAKING... {k_neighbourhood=}")
         new_solution = self.copy()
@@ -112,13 +111,16 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
         # Save applied moves to avoid looping back to the same solution
         moves_applied_reversed = set()
 
+        # Each iteration, the neighborhood radio (k) is increased
         for kth in range(k_neighbourhood):
-            # Only chose between moves that won't undo previous moves
             moves = [m for m in new_solution.possible_moves()
+                     # Only chose between moves that won't undo previous moves
                      if m not in moves_applied_reversed]
+
             self.logger.trace(f"{kth=}\t{len(moves)=}")
 
             if len(moves) == 0:
+                # Deadend, no more moves to apply
                 break
             move = random.choice(moves)
 
@@ -230,5 +232,5 @@ class BPSolutionExplorer(vns.NeighbourhoodExplorer):
     def print_stats(self):
         print(self.stats)
 
-    def plot(self):
-        return plot(self.solution)
+    # def plot(self):
+    #     return plot(self.solution)

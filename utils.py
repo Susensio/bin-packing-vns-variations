@@ -58,6 +58,14 @@ class Timer:
             signal.alarm(0)
 
 
+def yes_or_no(question):
+    reply = str(input(question+' (y/n): ')).lower().strip()
+    if reply[:1] == 'y':
+        return True
+    else:
+        return False
+
+
 if __name__ == "__main__":
     t = Timer()
     with t.timeout(2):
