@@ -25,6 +25,8 @@ if __name__ == "__main__":
     if utils.yes_or_no("Do you want to run the small test optimization?"):
 
         print("The file result.png will be updated for each algorithm.")
+        input("Press Enter to continue...")
+
         bin_size = 10
         test_instance = bpp.BPInstance(
             bin_size, [int(bin_size*random.random()*0.6)+1
@@ -46,7 +48,7 @@ if __name__ == "__main__":
             plot(sol)
             input("Press Enter to continue...")
 
-    if utils.yes_or_no("Do you want to run the full Falkenauer optimization?"):
+    if utils.yes_or_no("Run the full Falkenauer optimization? (this may take hours)"):
 
         K_MAX = (
             10,
