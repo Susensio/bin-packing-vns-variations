@@ -34,18 +34,40 @@ if __name__ == "__main__":
 
         print(test_instance)
 
+        print("Testing approximation algorithms...")
         for algorithm in (
             approximation.NullAlgorithm,
             approximation.NextFitAlgorithm,
             approximation.FirstFitAlgorithm,
-            approximation.FirstFitDecreasingAlgorithm,
+            # approximation.FirstFitDecreasingAlgorithm,
         ):
             alg = algorithm(test_instance)
             sol = alg.solve()
             # sol.print_stats()
             print(algorithm.__name__)
-            print(sol.bins)
+            print(f"{len(sol.bins)=}, {test_instance.lower_bound=}")
             plot(sol)
+            input("Press Enter to continue...")
+
+        input("Running VNS on last approximation algorithm...")
+        explorer = optimization.BPSolutionExplorer(test_instance, sol)
+        k_max = 20
+
+        t_max = 10
+
+        for algorithm, strategy in (
+            (vns.ReducedVNS, None),
+            (vns.BasicVNS, vns.LocalSearchStrategy.BEST),
+            (vns.BasicVNS, vns.LocalSearchStrategy.FIRST),
+        ):
+            alg = algorithm(explorer, k_max, t_max, strategy)
+            alg.solve()
+            sol = alg.explorer.solution
+
+            plot(sol)
+            print(algorithm.__name__)
+            print(f"{len(sol.bins)=}, {test_instance.lower_bound=}")
+
             input("Press Enter to continue...")
 
     if utils.yes_or_no("Run the full Falkenauer optimization? (this may take hours)"):
