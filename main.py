@@ -22,12 +22,12 @@ random.seed(0)
 
 if __name__ == "__main__":
 
-    if utils.yes_or_no("Do you want to run the small test optimization?"):
+    if utils.ask_yes_or_no("Do you want to run the small test optimization?"):
         logs.config('DEBUG')
 
-        print("The file result.png will be updated for each algorithm.")
+        print("The file ./images/result.png will be updated for each algorithm.")
 
-        n_items = int(input("Enter the test instance size (default=30): ")) or 30
+        n_items = int(input("Enter the test instance size (default=30): ") or 0) or 30
         bin_size = max(10, n_items // 3)
         test_instance = bpp.BPInstance(
             bin_size, [int(bin_size*random.random()*0.6)+1
@@ -51,7 +51,7 @@ if __name__ == "__main__":
             print(algorithm.__name__)
             print(f"{len(sol.bins)=}, {test_instance.lower_bound=}")
             plot(sol)
-            input("Press Enter to continue...")
+            utils.ask_continue()
 
         print("")
         print("OPTIMIZATION")
@@ -74,9 +74,9 @@ if __name__ == "__main__":
             print(algorithm.__name__)
             print(f"{len(sol.bins)=}, {test_instance.lower_bound=}")
 
-            input("Press Enter to continue...")
+            utils.ask_continue()
 
-    if utils.yes_or_no("Run the full Falkenauer optimization? (this may take hours)"):
+    if utils.ask_yes_or_no("Run the full Falkenauer optimization? (this may take hours)"):
         logs.config('INFO')
         K_MAX = (
             10,
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             ):
                 for k_max in K_MAX:
                     # plot(aprox)
-                    # input("Press enter to continue...")
+                    # utils.ask_continue()
                     alg = algorithm(explorer, k_max, t_max, strategy)
                     alg.solve()
 
