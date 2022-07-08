@@ -16,24 +16,27 @@ import results
 import utils
 
 import logs
-logs.config('INFO')
+
 
 random.seed(0)
 
 if __name__ == "__main__":
 
     if utils.yes_or_no("Do you want to run the small test optimization?"):
+        logs.config('DEBUG')
 
         print("The file result.png will be updated for each algorithm.")
-        input("Press Enter to continue...")
 
-        bin_size = 10
+        n_items = int(input("Enter the test instance size (default=30): ")) or 30
+        bin_size = max(10, n_items // 3)
         test_instance = bpp.BPInstance(
             bin_size, [int(bin_size*random.random()*0.6)+1
-                       for _ in range(int(bin_size*3))])
+                       for _ in range(n_items)])
 
         print(test_instance)
 
+        print("")
+        print("APPROXIMATION")
         print("Testing approximation algorithms...")
         for algorithm in (
             approximation.NullAlgorithm,
@@ -44,11 +47,14 @@ if __name__ == "__main__":
             alg = algorithm(test_instance)
             sol = alg.solve()
             # sol.print_stats()
+            print("")
             print(algorithm.__name__)
             print(f"{len(sol.bins)=}, {test_instance.lower_bound=}")
             plot(sol)
             input("Press Enter to continue...")
 
+        print("")
+        print("OPTIMIZATION")
         input("Running VNS on last approximation algorithm...")
         explorer = optimization.BPSolutionExplorer(test_instance, sol)
         k_max = 20
@@ -71,7 +77,7 @@ if __name__ == "__main__":
             input("Press Enter to continue...")
 
     if utils.yes_or_no("Run the full Falkenauer optimization? (this may take hours)"):
-
+        logs.config('INFO')
         K_MAX = (
             10,
             20,
